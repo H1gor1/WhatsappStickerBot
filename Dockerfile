@@ -34,6 +34,9 @@ COPY --from=build /app/dist ./dist
 
 RUN mkdir -p /app/storage /app/sessions /app/data
 
+RUN printf '#!/bin/sh\nnpx prisma db push --accept-data-loss\nexec node dist/server.js\n' > /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
+
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["/app/entrypoint.sh"]
