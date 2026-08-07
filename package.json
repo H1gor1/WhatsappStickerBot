@@ -1,0 +1,37 @@
+{
+  "name": "botfig",
+  "version": "1.0.0",
+  "description": "Bot de figurinhas para WhatsApp",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node --experimental-specifier-resolution=node dist/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@fastify/rate-limit": "^10.2.0",
+    "@libsql/client": "^0.17.4",
+    "@prisma/adapter-libsql": "^7.9.1",
+    "@prisma/client": "^7.9.1",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "bullmq": "^6.0.9",
+    "fastify": "^5.11.2",
+    "ioredis": "^5.6.0",
+    "node-webpmux": "^3.2.1",
+    "pino": "^10.3.1",
+    "qrcode-terminal": "^0.12.0",
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "prisma": "^7.9.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}

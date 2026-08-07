@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Contact {
+  id        String           @id @default(cuid())
+  jid       String           @unique
+  name      String?
+  createdAt DateTime         @default(now())
+  stickers  StickerRequest[]
+}
+
+model StickerRequest {
+  id           String        @id @default(cuid())
+  contactId    String
+  contact      Contact       @relation(fields: [contactId], references: [id])
+  mediaType    String
+  source       String        @default("DIRECT_UPLOAD")
+  sourceUrl    String?
+  status       String        @default("PENDING")
+  originalPath String?
+  resultPath   String?
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+  processedAt  DateTime?
+}
