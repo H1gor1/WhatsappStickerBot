@@ -1,4 +1,3 @@
-import type { WASocket } from '@whiskeysockets/baileys';
 import { processTweetLink } from '../sources/tweet-extractor.js';
 import { logger } from '../utils/logger.js';
 import { createReadStream } from 'node:fs';
@@ -27,7 +26,6 @@ export function isDownloadRequest(text: string): string | null {
 }
 
 export async function handleDownload(
-  sock: WASocket,
   jid: string,
   url: string,
   requestId: string

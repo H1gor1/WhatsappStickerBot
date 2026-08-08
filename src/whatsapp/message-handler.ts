@@ -176,18 +176,21 @@ async function handleMediaMessage(
 
 async function handleDownloadRequest(sock: WASocket, jid: string, url: string) {
   const contact = await findOrCreateContact(jid);
-    const stickerReq = await createStickerRequest({
+  const stickerReq = await createStickerRequest({
     contactId: contact.id,
-    mediaType: result.mediaType,
+    mediaType: 'VIDEO',
     sourceUrl: url,
-    source: result.source,
     requestType: 'DOWNLOAD',
+    source: 'DOWNLOAD',
   });
 
   await sendText(sock, jid, '⏳ Baixando arquivo...');
 
   try {
-    const result = await handleDownload(sock, jid, url, stickerReq.id);
+    const dlId = `dl_${Date.now()}`;
+    const result = await handleDownload(jid, url, dlId);
+
+    await updateStickerStatus(stickerReq.id, 'DONE', { processedAt: new Date() });
 
     if (result.mimeType.startsWith('image/') && result.ext === '.gif') {
       await sock.sendMessage(jid, { video: { stream: createReadStream(result.filePath) }, gifPlayback: true });
@@ -196,8 +199,6 @@ async function handleDownloadRequest(sock: WASocket, jid: string, url: string) {
     } else {
       await sock.sendMessage(jid, { video: { stream: createReadStream(result.filePath) }, mimetype: result.mimeType });
     }
-
-    await updateStickerStatus(stickerReq.id, 'DONE', { processedAt: new Date() });
 
     logger.info({ stickerId: stickerReq.id }, 'Arquivo enviado via modo download');
   } catch (error) {
