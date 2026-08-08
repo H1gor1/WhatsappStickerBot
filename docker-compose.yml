@@ -12,17 +12,8 @@ services:
 
   app:
     build: .
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/prod.db
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - STICKER_PACK_NAME=higorlino.dev bot
-      - STICKER_AUTHOR=higorlino.dev
-      - STORAGE_PATH=/app/storage
-      - SESSIONS_PATH=/app/sessions
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    env_file:
+      - .env
     volumes:
       - sessions:/app/sessions
       - storage:/app/storage

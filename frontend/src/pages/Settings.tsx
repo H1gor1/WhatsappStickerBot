@@ -6,6 +6,7 @@ export default function Settings() {
   const [maintenanceMsg, setMaintenanceMsg] = useState('Bot em manutenção. Volte mais tarde. 🔧');
   const [packName, setPackName] = useState('');
   const [packAuthor, setPackAuthor] = useState('');
+  const [welcomeMessage, setWelcomeMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -20,6 +21,7 @@ export default function Settings() {
       setMaintenanceMsg(data.maintenance_message || 'Bot em manutenção. Volte mais tarde. 🔧');
       setPackName(data.sticker_pack_name || '');
       setPackAuthor(data.sticker_pack_author || '');
+      setWelcomeMessage(data.welcome_message || '');
     } catch {}
   }
 
@@ -33,6 +35,7 @@ export default function Settings() {
         maintenance_message: maintenanceMsg,
         sticker_pack_name: packName,
         sticker_pack_author: packAuthor,
+        welcome_message: welcomeMessage,
       });
       setMessage('Configurações salvas!');
     } catch {
@@ -47,6 +50,24 @@ export default function Settings() {
       <h2 style={{ marginBottom: 24 }}>Configurações</h2>
 
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+        <div style={{ background: '#1a1a1a', padding: 20, borderRadius: 8 }}>
+          <h3 style={{ marginBottom: 16, fontSize: 14, color: '#888' }}>Boas-vindas</h3>
+          <div>
+            <label style={{ fontSize: 13, color: '#888', display: 'block', marginBottom: 6 }}>
+              Mensagem de primeira interação
+            </label>
+            <textarea
+              value={welcomeMessage}
+              onChange={(e) => setWelcomeMessage(e.target.value)}
+              rows={3}
+              placeholder="Mensagem enviada na primeira vez que alguém manda algo. Deixe vazio para desativar."
+            />
+            <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+              Enviada antes do processamento normal. A pessoa só recebe uma vez.
+            </div>
+          </div>
+        </div>
+
         <div style={{ background: '#1a1a1a', padding: 20, borderRadius: 8 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
             <input

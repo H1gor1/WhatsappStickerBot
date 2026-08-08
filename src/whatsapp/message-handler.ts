@@ -12,6 +12,7 @@ import { isBanned } from '../moderation/ban-check.js';
 import { isMaintenanceMode, getMaintenanceMessage } from '../moderation/maintenance-check.js';
 import { matchCommand } from '../commands/command-matcher.js';
 import { isDownloadRequest, handleDownload } from '../commands/download-mode.js';
+import { isFirstContact, getWelcomeMessage } from '../moderation/welcome.js';
 import fs from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -42,6 +43,11 @@ export async function handleMessage(sock: WASocket, msg: WAMessage) {
   if (!messageContent) return;
 
   const pushName = msg.pushName ?? undefined;
+
+  const welcomeMsg = await getWelcomeMessage();
+  if (welcomeMsg && await isFirstContact(jid)) {
+    await sendText(sock, jid, welcomeMsg);
+  }
 
   if (messageContent.conversation || messageContent.extendedTextMessage) {
     const text =
