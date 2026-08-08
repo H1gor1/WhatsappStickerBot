@@ -1,15 +1,4 @@
 services:
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "8880:80"
-      - "8443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    restart: unless-stopped
-
   app:
     build: .
     env_file:
@@ -33,5 +22,3 @@ volumes:
   storage:
   redis_data:
   sqldata:
-  caddy_data:
-  caddy_config:
