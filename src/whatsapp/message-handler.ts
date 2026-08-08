@@ -8,7 +8,12 @@ import { addToQueue } from '../queue/media-queue.js';
 import { processTweetLink } from '../sources/tweet-extractor.js';
 import { sendText } from './sender.js';
 import { loadEnv } from '../config/env.js';
+import { isBanned } from '../moderation/ban-check.js';
+import { isMaintenanceMode, getMaintenanceMessage } from '../moderation/maintenance-check.js';
+import { matchCommand } from '../commands/command-matcher.js';
+import { isDownloadRequest, handleDownload } from '../commands/download-mode.js';
 import fs from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import path from 'node:path';
 
 const env = loadEnv();
@@ -23,10 +28,19 @@ export async function handleMessage(sock: WASocket, msg: WAMessage) {
   if (remoteJid.includes('@g.us')) return;
   if (key.fromMe) return;
 
+  const jid = remoteJid as string;
+
+  if (await isBanned(jid)) return;
+
+  if (await isMaintenanceMode()) {
+    const msg = await getMaintenanceMessage();
+    await sendText(sock, jid, msg);
+    return;
+  }
+
   const messageContent = msg.message;
   if (!messageContent) return;
 
-  const jid = remoteJid as string;
   const pushName = msg.pushName ?? undefined;
 
   if (messageContent.conversation || messageContent.extendedTextMessage) {
@@ -34,6 +48,18 @@ export async function handleMessage(sock: WASocket, msg: WAMessage) {
       messageContent.conversation ||
       messageContent.extendedTextMessage?.text ||
       '';
+
+    const cmdResponse = await matchCommand(text);
+    if (cmdResponse) {
+      await sendText(sock, jid, cmdResponse);
+      return;
+    }
+
+    const downloadUrl = isDownloadRequest(text);
+    if (downloadUrl) {
+      await handleDownloadRequest(sock, jid, downloadUrl);
+      return;
+    }
 
     const tweetMatch = text.match(TWEET_REGEX);
     if (tweetMatch) {
@@ -139,5 +165,40 @@ async function handleMediaMessage(
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
     });
     await sendText(sock, jid, '❌ Erro ao processar sua mídia. Tente novamente.');
+  }
+}
+
+async function handleDownloadRequest(sock: WASocket, jid: string, url: string) {
+  const contact = await findOrCreateContact(jid);
+    const stickerReq = await createStickerRequest({
+    contactId: contact.id,
+    mediaType: result.mediaType,
+    sourceUrl: url,
+    source: result.source,
+    requestType: 'DOWNLOAD',
+  });
+
+  await sendText(sock, jid, '⏳ Baixando arquivo...');
+
+  try {
+    const result = await handleDownload(sock, jid, url, stickerReq.id);
+
+    if (result.mimeType.startsWith('image/') && result.ext === '.gif') {
+      await sock.sendMessage(jid, { video: { stream: createReadStream(result.filePath) }, gifPlayback: true });
+    } else if (result.mimeType.startsWith('image/')) {
+      await sock.sendMessage(jid, { image: { url: result.filePath } });
+    } else {
+      await sock.sendMessage(jid, { video: { stream: createReadStream(result.filePath) }, mimetype: result.mimeType });
+    }
+
+    await updateStickerStatus(stickerReq.id, 'DONE', { processedAt: new Date() });
+
+    logger.info({ stickerId: stickerReq.id }, 'Arquivo enviado via modo download');
+  } catch (error) {
+    logger.error({ error, stickerId: stickerReq.id }, 'Erro no modo download');
+    await updateStickerStatus(stickerReq.id, 'FAILED', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
+    await sendText(sock, jid, '❌ Erro ao baixar o arquivo. Verifique o link.');
   }
 }

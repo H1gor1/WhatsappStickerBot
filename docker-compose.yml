@@ -1,8 +1,17 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
   app:
     build: .
-    ports:
-      - "3050:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/prod.db
@@ -12,6 +21,8 @@ services:
       - STICKER_AUTHOR=higorlino.dev
       - STORAGE_PATH=/app/storage
       - SESSIONS_PATH=/app/sessions
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     volumes:
       - sessions:/app/sessions
       - storage:/app/storage
@@ -31,3 +42,5 @@ volumes:
   storage:
   redis_data:
   sqldata:
+  caddy_data:
+  caddy_config:

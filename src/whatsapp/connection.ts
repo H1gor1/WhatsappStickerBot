@@ -13,6 +13,7 @@ import { logger } from '../utils/logger.js';
 let sock: WASocket | null = null;
 let qrCode: string | null = null;
 let connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'qr' = 'disconnected';
+let connectedNumber: string | null = null;
 
 function getStatusCodeFromBoom(error: unknown): number {
   if (error && typeof error === 'object' && 'output' in error) {
@@ -35,11 +36,16 @@ async function onConnectionUpdate(update: Partial<ConnectionState>) {
   if (update.connection === 'open') {
     connectionStatus = 'connected';
     qrCode = null;
-    logger.info('WhatsApp conectado');
+    const user = sock?.user;
+    if (user?.id) {
+      connectedNumber = user.id.split(':')[0].split('@')[0];
+    }
+    logger.info({ number: connectedNumber }, 'WhatsApp conectado');
   }
 
   if (update.connection === 'close') {
     connectionStatus = 'disconnected';
+    connectedNumber = null;
     const statusCode = getStatusCodeFromBoom(update.lastDisconnect?.error);
     const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
@@ -90,5 +96,5 @@ export function getSocket(): WASocket | null {
 }
 
 export function getConnectionStatus() {
-  return { status: connectionStatus, qrCode };
+  return { status: connectionStatus, qrCode, connectedNumber };
 }

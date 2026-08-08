@@ -22,9 +22,50 @@ model StickerRequest {
   source       String        @default("DIRECT_UPLOAD")
   sourceUrl    String?
   status       String        @default("PENDING")
+  requestType  String        @default("STICKER")
   originalPath String?
   resultPath   String?
   errorMessage String?
   createdAt    DateTime      @default(now())
   processedAt  DateTime?
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+}
+
+model BannedContact {
+  id        String   @id @default(cuid())
+  jid       String   @unique
+  reason    String?
+  bannedAt  DateTime @default(now())
+  bannedBy  String?
+}
+
+model Command {
+  id           String   @id @default(cuid())
+  trigger      String   @unique
+  matchType    String   @default("EXACT")
+  responseText String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  message   String
+  stack     String?
+  context   String?
+  createdAt DateTime @default(now())
 }

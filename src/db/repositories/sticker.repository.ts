@@ -5,8 +5,9 @@ export type StickerStatus = 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED';
 export async function createStickerRequest(data: {
   contactId: string;
   mediaType: 'IMAGE' | 'VIDEO' | 'GIF';
-  source?: 'DIRECT_UPLOAD' | 'TWEET_LINK';
+  source?: string;
   sourceUrl?: string;
+  requestType?: 'STICKER' | 'DOWNLOAD';
 }) {
   return prisma.stickerRequest.create({ data });
 }

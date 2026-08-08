@@ -1,6 +1,9 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadEnv } from './config/env.js';
 import { logger } from './utils/logger.js';
 import { startConnection, getSocket } from './whatsapp/connection.js';
@@ -9,8 +12,11 @@ import { prisma } from './db/client.js';
 import { healthRoutes } from './routes/health.js';
 import { statusRoutes } from './routes/status.js';
 import { statsRoutes } from './routes/stats.js';
+import { registerAuth } from './admin/auth.js';
+import { adminPlugin } from './admin/plugin.js';
 
 const env = loadEnv();
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const app = Fastify({
@@ -23,13 +29,30 @@ async function main() {
     timeWindow: env.RATE_LIMIT_WINDOW_MS,
   });
 
+  await registerAuth(app);
+
+  const frontendDist = resolve(__dirname, '..', 'frontend', 'dist');
+  await app.register(fastifyStatic, {
+    root: frontendDist,
+    prefix: '/admin/',
+  });
+
+  app.setNotFoundHandler((_req, reply) => {
+    if (_req.url.startsWith('/admin')) {
+      reply.sendFile('index.html', frontendDist);
+    } else {
+      reply.status(404).send({ error: 'Not found' });
+    }
+  });
+
+  await app.register(adminPlugin);
   await app.register(healthRoutes);
   await app.register(statusRoutes);
   await app.register(statsRoutes);
 
-  app.setErrorHandler((error, _req, reply) => {
-    logger.error({ error }, 'Erro na API');
-    reply.status(500).send({ error: 'Internal server error' });
+  app.setErrorHandler((error: Error, _req, reply) => {
+    logger.error({ error: error.message }, 'Erro na API');
+    reply.status(500).send({ error: error.message || 'Internal server error' });
   });
 
   await app.listen({ port: env.PORT, host: env.HOST });
